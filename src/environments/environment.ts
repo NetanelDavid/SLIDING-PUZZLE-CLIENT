@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  baseUrl: 'http://localhost:5000/'
+  baseUrl: 'https://dliding-puzzle-server.herokuapp.com/'
 };
 
 /*
