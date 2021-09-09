@@ -1,0 +1,24 @@
+$measure: 90px;
+.cell {
+    height: $measure;
+    width: $measure;
+
+    &.zero {
+        border: 5px;
+        background-color: rgb(136, 179, 218);
+    }
+
+    &:not(.zero) {
+        background-color: rgb(83, 126, 73);
+        color: rgb(128, 48, 48);
+        font-size: $measure / 2;
+    }
+}
+
+.game-board {
+    width: max-content;
+}
+
+.width{
+    width: 50%;
+}
