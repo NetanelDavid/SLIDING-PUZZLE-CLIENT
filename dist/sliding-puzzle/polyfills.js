@@ -7,7 +7,7 @@
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! C:\Users\NETANEL\programming\projects\SLIDING-PUZZLE\SLIDING-PUZZLE-CLIENT\src\polyfills.ts */"hN/g");
+module.exports = __webpack_require__(/*! C:\dev\SLIDING-PUZZLE-CLIENT\src\polyfills.ts */"hN/g");
 
 
 /***/ }),
