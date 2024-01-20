@@ -30,7 +30,7 @@
     <table class="table table-bordered">
       <tbody>
         <tr *ngFor='let ar of puzzleNumbers; index as i'>
-          <td (click)="onClickCell(i * n + j)" *ngFor='let num of ar; index as j' class="align-middle text-center cell "
+          <td (click)="onClickCell(i * puzzleSize + j)" *ngFor='let num of ar; index as j' class="align-middle text-center cell "
             [ngClass]=" 0 === num ? 'zero' : ''">
             {{num || ''}}
           </td>
