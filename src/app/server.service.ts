@@ -1,23 +1,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from 'src/environments/environment';
+import { Observable, of } from 'rxjs';
+import { newArray, solution } from "./oldService";
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class ServerService {
 
   constructor(private client: HttpClient) { }
 
-  getNewArray(size: number): Observable<{ arr: number[][] }> {
-    return this.client.get<{ arr: number[][] }>(environment.baseUrl + 'new/' + size);
+  getNewArray(size: number): Observable<number[][]> {
+    return of(newArray(size));
   }
 
-  getSolution(arr: number[][]): Observable<{path: number[]}> {
-    
-    return this.client.post<{ path: number[] }>(environment.baseUrl + 'solution', { arr });
+  getSolution(arr: number[][]): Observable<number[]> {
+    const newArr = JSON.parse(JSON.stringify(arr))
+    return of(JSON.parse(JSON.stringify(solution(newArr))));
   }
-
-
 }

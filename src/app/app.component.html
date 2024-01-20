@@ -1,25 +1,25 @@
 <div class="row">
 
   <div class="col-5 ps-5 my-3">
-    <input [(ngModel)]="n" type="number" min="3" max="40" class="width text-center">
-    <select class="form-select mt-3 width" [(ngModel)]="speed">
+    <input [(ngModel)]="puzzleSize" type="number" min="3" max="40" class="inputs-width text-center">
+    <select class="form-select mt-3 inputs-width" [(ngModel)]="solutionSpeed">
 
       <option *ngFor="let item of ['choose a solution speed','faster','medium','slowly'], index as i" [value]="i-1">
         {{item}}
       </option>
 
     </select>
-    <div class="btn-group width my-3">
-      <button (click)="constArr(n)" class="btn btn-primary col-6">
-        {{ arr.length == n ? 'mix' : 'update' }}
+    <div class="btn-group inputs-width my-3">
+      <button (click)="initPuzzleNumbers(puzzleSize)" class="btn btn-primary col-6">
+        {{ puzzleNumbers.length == puzzleSize ? 'mix' : 'update' }}
       </button>
-      <button (click)="solvedAndStop()" class="btn col-6" [ngClass]="isActive? 'btn-danger' : 'btn-success' ">
-        {{isActive?'stop' :'solve'}}
+      <button (click)="solvedOrStopSolution()" class="btn col-6" [ngClass]="isSolutionRunning? 'btn-danger' : 'btn-success' ">
+        {{isSolutionRunning ? 'stop' :'solve'}}
       </button>
     </div>
   </div>
   <div class="col-2 d-flex justify-content-center pt-4" >
-    <mat-progress-spinner mode="indeterminate" color="accent" [diameter]="100" *ngIf="spinner">
+    <mat-progress-spinner mode="indeterminate" color="accent" [diameter]="100" *ngIf="showSpinner">
     </mat-progress-spinner>
   </div>
 
@@ -27,20 +27,16 @@
 
 <div class="row justify-content-center mx-0">
   <div class="game-board">
-
     <table class="table table-bordered">
       <tbody>
-
-        <tr *ngFor='let ar of arr; index as i'>
-          <td (click)="click(i * n + j)" *ngFor='let num of ar; index as j' class="align-middle text-center cell "
-            [ngClass]=" num ? '' : 'zero'">
+        <tr *ngFor='let ar of puzzleNumbers; index as i'>
+          <td (click)="onClickCell(i * n + j)" *ngFor='let num of ar; index as j' class="align-middle text-center cell "
+            [ngClass]=" 0 === num ? 'zero' : ''">
             {{num || ''}}
           </td>
         </tr>
 
       </tbody>
     </table>
-
-
   </div>
 </div>
