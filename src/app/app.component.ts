@@ -1,151 +1,153 @@
-import { Component } from '@angular/core';
-import { ServerService } from './server.service';
-import { finalize } from 'rxjs/operators';
+import { Component } from "@angular/core";
+import { ServerService } from "./server.service";
+import { finalize } from "rxjs/operators";
+
+type Coordinates = {
+  y: number;
+  x: number;
+}
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  selector: "app-root",
+  templateUrl: "./app.component.html",
+  styleUrls: ["./app.component.scss"]
 })
+
 export class AppComponent {
 
-  title = 'sliding-puzzle';
+  title = "sliding-puzzle";
 
-  arr: number[][] = [];
-  n: number = 3;
-  offset: number[];
-  index0: number;
-  length: number;
-  timer: any;
-  isActive: boolean = false;
-  speed: number = -1;
-  spinner = false;
+  public puzzleNumbers: number[][] = [];
+  public puzzleSize = 3;
+  public isSolutionRunning = false;
+  public showSpinner = false;
 
-  constructor(private serevr: ServerService) {
-    this.constArr();
+  private flatIndex0: number;
+  private length: number;
+  private intervalId: number;
+  private solutionSpeed = -1;
+
+  constructor(private server: ServerService) {
+    this.initPuzzleNumbers();
   }
 
-  constArr(n?: number) {
+  public solvedOrStopSolution() {
+    if (this.isSolutionRunning) {
+      return this.stopSolution();
+    }
+    this.solved();
+  }
 
-    if (this.isActive) {
-      this.stop();
+  public initPuzzleNumbers(puzzleSize?: number) {
+
+    if (this.isSolutionRunning) {
+      this.stopSolution();
     }
 
-    let arrLocal = localStorage.getItem('arr');
-
-    if (arrLocal && !n) {
-
-      this.arr = JSON.parse(arrLocal);
-      this.constVariables();
-
+    let puzzleNumbersFromLocalStore = localStorage.getItem("puzzleNumbers");
+    if (puzzleNumbersFromLocalStore && !puzzleSize) {
+      this.puzzleNumbers = JSON.parse(puzzleNumbersFromLocalStore);
+      this.initVariables();
     } else {
-
-      this.spinner = true;
-      this.serevr.getNewArray(this.n).subscribe(res => {
-        this.arr = res.arr;
-        this.constVariables();
-        localStorage.setItem('arr', JSON.stringify(this.arr));
-        this.spinner = false;
+      this.showSpinner = true;
+      this.server.getNewArray(this.puzzleSize).subscribe((res) => {
+        this.puzzleNumbers = res.arr;
+        this.showSpinner = false;
+        this.initVariables();
+        this.saveArrayInLocalStore();
       })
 
     }
   }
 
-  constVariables() {
-    this.n = this.arr.length;
-    this.length = Math.pow(this.n, 2);
-    this.offset = [-this.n, this.n, -1, 1];
-    this.index0 = this.search0();
+  public onClickCell(flatIndex: number) {
+    if (this.getReplaceOptions().includes(flatIndex)) {
+      this.replace0WithFlatIndex(flatIndex);
+      this.saveArrayInLocalStore()
+    }
   }
 
-  search0(): number {
+  private initVariables() {
+    this.puzzleSize = this.puzzleNumbers.length;
+    this.length = Math.pow(this.puzzleSize, 2);
+    this.flatIndex0 = this.getFlatIndex0();
+  }
+
+  private getFlatIndex0(): number {
     for (let i = 0; i < this.length; i++) {
-      if (!this.getValue(i)) {
+      if (0 === this.getPuzzleNumberByFlatIndex(i)) {
         return i;
       }
     }
   }
 
-  replase(index: number) {
-
-    this.setValue(this.index0, this.getValue(index));
-    this.setValue(index, 0);
-
-    this.index0 = index;
+  private replace0WithFlatIndex(flatIndex: number) {
+    this.setPuzzleNumber(this.flatIndex0, this.getPuzzleNumberByFlatIndex(flatIndex));
+    this.setPuzzleNumber(flatIndex, 0);
+    this.flatIndex0 = flatIndex;
   }
 
-  click(index: number) {
-    if (this.getOptions().includes(index)) {
-      this.replase(index);
-      localStorage.setItem('arr', JSON.stringify(this.arr));
+  private getReplaceOptions(): number[] {
+
+    let { x: x0, y: y0 } = this.getCoordinatesForFlatIndex(this.flatIndex0);
+
+    return [-this.puzzleSize, this.puzzleSize, -1, 1].map(gep => gep + this.flatIndex0)
+      .filter((flatIndexOption) => {
+        const { y: flatIndexOptionY, x: flatIndexOptionX } = this.getCoordinatesForFlatIndex(flatIndexOption);
+        return flatIndexOption >= 0
+          && flatIndexOption < this.length
+          && (flatIndexOptionY === y0 || flatIndexOptionX === x0)
+      });
+  }
+
+  private getPuzzleNumberByFlatIndex(flatIndex: number): number {
+    const { y, x } = this.getCoordinatesForFlatIndex(flatIndex);
+    return this.puzzleNumbers[y][x];
+  }
+
+  private setPuzzleNumber(flatIndex: number, value: number): void {
+    const { y, x } = this.getCoordinatesForFlatIndex(flatIndex);
+    this.puzzleNumbers[y][x] = value;
+  }
+
+  private getCoordinatesForFlatIndex(flatIndex: number): Coordinates {
+    return {
+      y: Math.floor(flatIndex / this.puzzleSize),
+      x: flatIndex % this.puzzleSize,
     }
   }
 
-  getOptions(): number[] {
-
-    let indexex0 = this.getAxises(this.index0);
-    let indexesI: number[];
-
-    return this.offset.map(i => i + this.index0)
-      .filter(
-        i =>
-          i >= 0
-          && i < this.length
-          && ((indexesI = this.getAxises(i))[0] == indexex0[0] || indexesI[1] == indexex0[1])
-      );
+  private stopSolution(): void {
+    this.isSolutionRunning = false;
+    clearInterval(this.intervalId)
+    this.saveArrayInLocalStore();
   }
 
-  getValue(index: number): number {
-    return this.arr[Math.floor(index / this.n)][index % this.n];
+  private saveArrayInLocalStore() {
+    localStorage.setItem("puzzleNumbers", JSON.stringify(this.puzzleNumbers));
   }
 
-  setValue(index: number, value: number): void {
-    this.arr[Math.floor(index / this.n)][index % this.n] = value;
-  }
+  private solved(): void {
+    this.showSpinner = true;
+    this.server.getSolution(this.puzzleNumbers).pipe(finalize(() => this.showSpinner = false)).subscribe((res) => {
+      console.log(`Number of solution steps: ${res.path.length}`);
+      this.isSolutionRunning = true;
 
-  getAxises(index: number): number[] {
-    return [Math.floor(index / this.n), index % this.n];
-  }
+      let i = 0;
+      this.intervalId = setInterval(() => {
+        if (i < res.path.length) {
+          this.replace0WithFlatIndex(res.path[i++]);
+        } else {
+          this.stopSolution();
+        }
+      }, Math.abs(this.solutionSpeed) * 250);
 
-  stop(): void {
-    this.isActive = false;
-    clearInterval(this.timer)
-    localStorage.setItem("arr", JSON.stringify(this.arr))
-  }
-
-  solvedAndStop() {
-
-    if (this.isActive) {
-      this.stop();
-    } else {
-      this.solved()
-    }
-  }
-
-  solved(): void {
-    this.spinner = true;
-    this.serevr.getSolution(this.arr).pipe(finalize(() => this.spinner = false)).subscribe(
-      res => {
-        let i = 0;
-        this.isActive = true;
-        console.log(res.path.length);
-
-        this.timer = setInterval(() => {
-
-          if (i < res.path.length) {
-            this.replase(res.path[i++]);
-          } else {
-            this.stop();
-          }
-        }, Math.abs(this.speed) * 250);
-
-      }, () => {
-        this.stop();
-        setTimeout(() => {
-          alert("Insoluble board!");
-        }, 15)
-      }
-    )
+    }, () => {
+      this.stopSolution();
+      setTimeout(() => {
+        alert("Insoluble board!");
+      }, 15)
+    });
   }
 
 }
