@@ -21,11 +21,11 @@ export class AppComponent {
   public puzzleSize = 3;
   public isSolutionRunning = false;
   public showSpinner = false;
+  public solutionSpeed = -1;
 
   private flatIndex0: number;
   private length: number;
-  private intervalId: number;
-  private solutionSpeed = -1;
+  private intervalId: any;
 
   constructor(private server: ServerService) {
     this.initPuzzleNumbers();
@@ -51,7 +51,7 @@ export class AppComponent {
     } else {
       this.showSpinner = true;
       this.server.getNewArray(this.puzzleSize).subscribe((res) => {
-        this.puzzleNumbers = res.arr;
+        this.puzzleNumbers = JSON.parse(JSON.stringify(res));
         this.showSpinner = false;
         this.initVariables();
         this.saveArrayInLocalStore();
@@ -130,13 +130,13 @@ export class AppComponent {
   private solved(): void {
     this.showSpinner = true;
     this.server.getSolution(this.puzzleNumbers).pipe(finalize(() => this.showSpinner = false)).subscribe((res) => {
-      console.log(`Number of solution steps: ${res.path.length}`);
+      console.log(`Number of solution steps: ${res.length}`);
       this.isSolutionRunning = true;
 
       let i = 0;
       this.intervalId = setInterval(() => {
-        if (i < res.path.length) {
-          this.replace0WithFlatIndex(res.path[i++]);
+        if (i < res.length) {
+          this.replace0WithFlatIndex(res[i++]);
         } else {
           this.stopSolution();
         }

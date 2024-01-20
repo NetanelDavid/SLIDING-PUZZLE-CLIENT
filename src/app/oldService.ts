@@ -28,7 +28,7 @@ export function newArray(n) {
 
     for (let i = 0; i < LENGTH * 1000; i++) {
 
-        let options = getOptions(true);
+        let options = getOptions();
         let random = Math.floor(Math.random() * (options.length));
         replaseByindex(options[random], true)
     }
@@ -126,7 +126,7 @@ export function solution(arr) {
         return true;
     }
 
-    function findAwy0(to, lockedUps, start) {
+    function findAwy0(to, lockedUps, start?) {
 
         let from = INDEX0,
             axisesFrom = getAxisesByIndex(from),
@@ -141,15 +141,15 @@ export function solution(arr) {
                 stepX = axisesFrom.x > axisesTo.x ? -1 : 1;
 
             if (
-                !checkTarget(from, from + stepX, { lockedUps })
-                && !checkTarget(from, from + stepY, { lockedUps })
+                !checkTarget(from, from + stepX, { lockedUps } as any)
+                && !checkTarget(from, from + stepY, { lockedUps } as any)
             ) {
                 return false;
             }
 
             while (
                 axisesFrom.y != axisesTo.y
-                && checkTarget(from, from + stepY, { start, lockedUps })
+                && checkTarget(from, from + stepY, { start, lockedUps } as any)
             ) {
                 awy.push(from += stepY);
                 axisesFrom = getAxisesByIndex(from);
@@ -157,7 +157,7 @@ export function solution(arr) {
 
             while (
                 axisesFrom.x != axisesTo.x
-                && checkTarget(from, from + stepX, { start, lockedUps })
+                && checkTarget(from, from + stepX, { start, lockedUps } as any)
             ) {
                 awy.push(from += stepX)
                 axisesFrom = getAxisesByIndex(from);
@@ -165,7 +165,7 @@ export function solution(arr) {
 
             if (axisesFrom.y == axisesTo.y
                 && axisesFrom.x != axisesTo.x
-                && !checkTarget(from, from + stepX, { start, lockedUps })
+                && !checkTarget(from, from + stepX, { start, lockedUps } as any)
             ) {
                 let count = 0;
                 count += downOrTop(false);
@@ -176,7 +176,7 @@ export function solution(arr) {
             } else if (
                 axisesFrom.x == axisesTo.x
                 && axisesFrom.y != axisesTo.y
-                && !checkTarget(from, from + stepY, { start, lockedUps })
+                && !checkTarget(from, from + stepY, { start, lockedUps } as any)
             ) {
                 let count = 0;
                 count += leftOrRigth(false);
@@ -189,8 +189,8 @@ export function solution(arr) {
             if (
                 axisesFrom.y != axisesTo.y
                 && axisesFrom.x != axisesTo.x
-                && !checkTarget(from, from + stepY, { lockedUps, start })
-                && !checkTarget(from, from + stepX, { lockedUps, start })
+                && !checkTarget(from, from + stepY, { lockedUps, start } as any)
+                && !checkTarget(from, from + stepX, { lockedUps, start } as any)
             ) {
 
                 for (let count = 0, interactions = 0, LOR, DOT; count < 2; interactions++) {
@@ -225,7 +225,7 @@ export function solution(arr) {
                 let direction = axisesFrom.y > axisesTo.y ? 0 : 1,
                     target = from + OFFSET[direction];
 
-                if (checkTarget(from, target, { start, lockedUps, axis: "y" })) {
+                if (checkTarget(from, target, { start, lockedUps, axis: "y" } as any)) {
                     awy.push(from = target);
                     axisesFrom = getAxisesByIndex(from);
                     return 1;
@@ -234,13 +234,13 @@ export function solution(arr) {
                 return 0;
             }
 
-            if (checkTarget(from, from + OFFSET[1], { start, lockedUps, axis: "y" })) {
+            if (checkTarget(from, from + OFFSET[1], { start, lockedUps, axis: "y" } as any)) {
                 awy.push(from += OFFSET[1]);
                 axisesFrom = getAxisesByIndex(from);
                 return 1;
             }
 
-            if (checkTarget(from, from + OFFSET[0], { start, lockedUps, axis: "y" })) {
+            if (checkTarget(from, from + OFFSET[0], { start, lockedUps, axis: "y" } as any)) {
                 awy.push(from += OFFSET[0]);
                 axisesFrom = getAxisesByIndex(from);
                 return 1;
@@ -255,7 +255,7 @@ export function solution(arr) {
 
                 let direction = axisesFrom.x > axisesTo.x ? 2 : 3;
 
-                if (checkTarget(from, from + OFFSET[direction], { start, lockedUps, axis: "x" })) {
+                if (checkTarget(from, from + OFFSET[direction], { start, lockedUps, axis: "x" } as any)) {
                     awy.push(from += OFFSET[direction]);
                     axisesFrom = getAxisesByIndex(from);
                     return 1;
@@ -264,13 +264,13 @@ export function solution(arr) {
                 return 0;
             }
 
-            if (checkTarget(from, from + OFFSET[3], { start, lockedUps, axis: "x" })) {
+            if (checkTarget(from, from + OFFSET[3], { start, lockedUps, axis: "x" } as any)) {
                 awy.push(from += OFFSET[3]);
                 axisesFrom = getAxisesByIndex(from);
                 return 1;
             }
 
-            if (checkTarget(from, from + OFFSET[2], { start, lockedUps, start, axis: "x" })) {
+            if (checkTarget(from, from + OFFSET[2], { start, lockedUps, axis: "x" } as any)) {
                 awy.push(from += OFFSET[2]);
                 axisesFrom = getAxisesByIndex(from);
                 return 1;
@@ -318,7 +318,7 @@ export function solution(arr) {
         return true;
     }
 
-    function lastLines(index, beforeGarbeg) {
+    function lastLines(index, beforeGarbeg?) {
 
         GoFromBelowNow = false;
 
@@ -332,7 +332,7 @@ export function solution(arr) {
 
 
         while ((next = getLinkedInBall(next.index || from.index, 1)).index != before.index) {
-            if (next.value) {
+            if ((next as any).value) {
                 count++;
             }
         }
@@ -489,7 +489,7 @@ function repalseByDirection(direction) {
     replaseByindex(INDEX0 + OFFSET[direction]);
 }
 
-function replaseByindex(index, notLog) {
+function replaseByindex(index, notLog?) {
 
     let value = getValueByIndex(index);
 
