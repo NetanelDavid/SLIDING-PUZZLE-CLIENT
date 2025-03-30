@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:4201",
+            "webRoot": "${workspaceFolder}",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack:///./src/*": "${workspaceFolder}/src/*",
+                "webpack:///src/*": "${workspaceFolder}/src/*",
+                "webpack:///*": "*",
+                "webpack:///./~/*": "${workspaceFolder}/node_modules/*"
+            },
+            "trace": true,
+            "preLaunchTask": "Run Sliding Puzzle"
+        }
+    ]
+}
