@@ -1,16 +1,20 @@
 import { Component } from "@angular/core";
 import { finalize } from "rxjs/operators";
 import { ResolverService } from "./resolver.service";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 
 type Coordinates = {
 	y: number;
 	x: number;
 }
-
 @Component({
 	selector: "app-root",
 	templateUrl: "./app.component.html",
-	styleUrls: ["./app.component.scss"]
+	styleUrls: ["./app.component.scss"],
+	standalone: true,
+	imports: [CommonModule, FormsModule, MatProgressSpinnerModule]
 })
 
 export class AppComponent {

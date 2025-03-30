@@ -67,18 +67,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "sliding-puzzle:build"
+            "buildTarget": "sliding-puzzle:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "sliding-puzzle:build:production"
+              "buildTarget": "sliding-puzzle:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "sliding-puzzle:build"
+            "buildTarget": "sliding-puzzle:build"
           }
         },
         "test": {
@@ -127,7 +127,6 @@
       }
     }
   },
-  "defaultProject": "sliding-puzzle",
   "cli": {
     "analytics": "930cb790-9c91-47b5-bf96-ecc68420f593"
   }
