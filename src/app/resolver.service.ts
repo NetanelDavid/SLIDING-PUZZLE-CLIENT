@@ -18,14 +18,15 @@ export class ResolverService {
 	private COUNT_STEP: number;
 	private ALL_HASH: any;
 	private INDEXES_FOR_DELETE_LIST: any;
+	private GoFromBelowNow: boolean;
+	private currentIndex: number;
 
+	constructor() { }
 
-	private contVariablesForArr(arr: number[][]) {
-		this.ARR = arr;
-		this.N = this.ARR.length;
-		this.LENGTH = this.N * this.N;
-		this.OFFSET = [-this.N, this.N, -1, 1];
-		this.INDEX0 = (this.INDEX0 = this.getIndexByValue(0, 0)) >= 0 ? this.INDEX0 : this.LENGTH - 1;
+	public getSolution(arr: number[][]): Observable<number[]> {
+		debugger;
+		const newArr = JSON.parse(JSON.stringify(arr));
+		return of(JSON.parse(JSON.stringify(this.solution(newArr))));
 	}
 
 	public getNewArray(n: number): Observable<number[][]> {
@@ -49,12 +50,20 @@ export class ResolverService {
 		return of(this.ARR);
 	}
 
-	private solution(arr: number[][]) {
+	private contVariablesForArr(arr: number[][]) {
+		this.ARR = arr;
+		this.N = this.ARR.length;
+		this.LENGTH = this.N * this.N;
+		this.OFFSET = [-this.N, this.N, -1, 1];
+		this.INDEX0 = (this.INDEX0 = this.getIndexByValue(0, 0)) >= 0 ? this.INDEX0 : this.LENGTH - 1;
+	}
 
+
+	private solution(arr: number[][]) {
 		this.contVariablesForArr(arr);
 
-		var currentIndex = 0,
-			GoFromBelowNow;
+		this.currentIndex = 0;
+		this.GoFromBelowNow = false;
 
 		this.INDEXES_FOR_DELETE_LIST = [];
 		this.ALL_HASH = {};
@@ -63,439 +72,390 @@ export class ResolverService {
 		this.HASH = this.getHashByArr();
 		this.ALL_HASH[this.HASH] = this.COUNT_STEP++;
 
-		return solved();
+		return this.solved();
+	}
 
-		function solved() {
-
-			while ((currentIndex = findIndexProblem()) != -1) {
-
-				if (!going(findWay(this.getIndexByValue(currentIndex + 1, currentIndex), currentIndex)) || (GoFromBelowNow && !GoFromBelow(currentIndex))) {
-					return null;
-				}
+	private solved = () => {
+		while ((this.currentIndex = this.findIndexProblem()) != -1) {
+			if (!this.going(this.findWay(this.getIndexByValue(this.currentIndex + 1, this.currentIndex), this.currentIndex)) ||
+				(this.GoFromBelowNow && !this.GoFromBelow(this.currentIndex))) {
+				return null;
 			}
-
-			return this.PATH.filter((v, i) => this.INDEXES_FOR_DELETE_LIST.every(IFD => IFD.checkIndex(i)));;
 		}
 
-		function findIndexProblem() {
+		return this.PATH.filter((v, i) => this.INDEXES_FOR_DELETE_LIST.every(IFD => IFD.checkIndex(i)));
+	}
 
-			for (var i = currentIndex; i < this.LENGTH - 1; i++) {
-
-				if (this.getValueByIndex(i) != i + 1) {
-					return i;
-				}
+	private findIndexProblem = () => {
+		for (var i = this.currentIndex; i < this.LENGTH - 1; i++) {
+			if (this.getValueByIndex(i) != i + 1) {
+				return i;
 			}
-			return -1;
+		}
+		return -1;
+	}
+
+	private findWay = (from, to) => {
+		let axisesFrom = this.getAxisesByIndex(from),
+			axisesTo = this.getAxisesByIndex(to),
+			stepX = axisesFrom.x < axisesTo.x ? 1 : -1,
+			res = [from],
+			alt = to + this.N - 1;
+
+		if (axisesTo.x == this.N - 1 && !(to == this.INDEX0 && to + this.N == from)) {
+			to = alt;
+			axisesTo.x--;
+			this.GoFromBelowNow = true;
 		}
 
-		function findWay(from, to) {
-
-			let axisesFrom = this.getAxisesByIndex(from),
-				axisesTo = this.getAxisesByIndex(to),
-				stepX = axisesFrom.x < axisesTo.x ? 1 : -1,
-				res = [from],
-				alt = to + this.N - 1;
-
-			if (axisesTo.x == this.N - 1 && !(to == this.INDEX0 && to + this.N == from)) {
-
-				to = alt;
-				axisesTo.x--;
-				GoFromBelowNow = true;
+		while (from != to) {
+			if (from == alt && axisesFrom.x > 0 && axisesFrom.x < this.N - 1) {
+				this.GoFromBelowNow = true;
+				break;
 			}
 
-			while (from != to) {
-
-				if (from == alt && axisesFrom.x > 0 && axisesFrom.x < this.N - 1) {
-					GoFromBelowNow = true;
-					break;
-				}
-
-				if (axisesFrom.x != axisesTo.x) {
-					res.push(from += stepX);
-					axisesFrom.x += stepX;
-				}
-
-				if (from - this.N >= to) {
-					res.push(from -= this.N);
-				}
-
+			if (axisesFrom.x != axisesTo.x) {
+				res.push(from += stepX);
+				axisesFrom.x += stepX;
 			}
 
-			return res;
+			if (from - this.N >= to) {
+				res.push(from -= this.N);
+			}
 		}
 
-		function going(way) {
+		return res;
+	}
 
-			for (let i = 1; i < way.length; i++) {
+	private going = (way) => {
+		for (let i = 1; i < way.length; i++) {
+			let awy0 = this.findAwy0(way[i], [way[i - 1]]);
 
-				let awy0 = findAwy0(way[i], [way[i - 1]])
+			if (awy0) this.going0(awy0);
+			else return this.lastLines(this.currentIndex);
 
-				if (awy0) going0(awy0);
-				else return lastLines(currentIndex);
-
-				this.replaseByindex(way[i - 1]);
-			}
-
-			return true;
+			this.replaseByindex(way[i - 1]);
 		}
 
-		function findAwy0(to, lockedUps, start?) {
+		return true;
+	}
 
-			let from = this.INDEX0,
-				axisesFrom = this.getAxisesByIndex(from),
-				axisesTo = this.getAxisesByIndex(to),
-				awy = [from];
+	private findAwy0 = (to, lockedUps, start?) => {
+		let from = this.INDEX0,
+			axisesFrom = this.getAxisesByIndex(from),
+			axisesTo = this.getAxisesByIndex(to),
+			awy = [from];
 
-			start = Number.isFinite(start) ? start : currentIndex;
+		start = Number.isFinite(start) ? start : this.currentIndex;
 
-			while (from != to) {
+		while (from != to) {
+			let stepY = axisesFrom.y > axisesTo.y ? -this.N : this.N,
+				stepX = axisesFrom.x > axisesTo.x ? -1 : 1;
 
-				let stepY = axisesFrom.y > axisesTo.y ? -this.N : this.N,
-					stepX = axisesFrom.x > axisesTo.x ? -1 : 1;
+			if (!this.checkTarget(from, from + stepX, { lockedUps, start }) &&
+				!this.checkTarget(from, from + stepY, { lockedUps, start })) {
+				return false;
+			}
 
-				if (
-					!checkTarget(from, from + stepX, { lockedUps } as any)
-					&& !checkTarget(from, from + stepY, { lockedUps } as any)
-				) {
+			while (axisesFrom.y != axisesTo.y &&
+				this.checkTarget(from, from + stepY, { start, lockedUps })) {
+				awy.push(from += stepY);
+				axisesFrom = this.getAxisesByIndex(from);
+			}
+
+			while (axisesFrom.x != axisesTo.x &&
+				this.checkTarget(from, from + stepX, { start, lockedUps })) {
+				awy.push(from += stepX)
+				axisesFrom = this.getAxisesByIndex(from);
+			}
+
+			if (axisesFrom.y == axisesTo.y &&
+				axisesFrom.x != axisesTo.x &&
+				!this.checkTarget(from, from + stepX, { start, lockedUps })) {
+				let count = 0;
+				count += this.downOrTop(from, axisesFrom, axisesTo, awy, false, start, lockedUps);
+				count += this.leftOrRigth(from, axisesFrom, axisesTo, awy, true, start, lockedUps);
+				if (count < 2) {
 					return false;
 				}
-
-				while (
-					axisesFrom.y != axisesTo.y
-					&& checkTarget(from, from + stepY, { start, lockedUps } as any)
-				) {
-					awy.push(from += stepY);
-					axisesFrom = this.getAxisesByIndex(from);
+			} else if (axisesFrom.x == axisesTo.x &&
+				axisesFrom.y != axisesTo.y &&
+				!this.checkTarget(from, from + stepY, { start, lockedUps })) {
+				let count = 0;
+				count += this.leftOrRigth(from, axisesFrom, axisesTo, awy, false, start, lockedUps);
+				count += this.downOrTop(from, axisesFrom, axisesTo, awy, true, start, lockedUps);
+				if (count < 2) {
+					return false;
 				}
+			}
 
-				while (
-					axisesFrom.x != axisesTo.x
-					&& checkTarget(from, from + stepX, { start, lockedUps } as any)
-				) {
-					awy.push(from += stepX)
-					axisesFrom = this.getAxisesByIndex(from);
-				}
+			if (axisesFrom.y != axisesTo.y &&
+				axisesFrom.x != axisesTo.x &&
+				!this.checkTarget(from, from + stepY, { lockedUps, start }) &&
+				!this.checkTarget(from, from + stepX, { lockedUps, start })) {
 
-				if (axisesFrom.y == axisesTo.y
-					&& axisesFrom.x != axisesTo.x
-					&& !checkTarget(from, from + stepX, { start, lockedUps } as any)
-				) {
-					let count = 0;
-					count += downOrTop(false);
-					count += leftOrRigth(true);
-					if (count < 2) {
+				for (let count = 0, interactions = 0, LOR = false, DOT = false; count < 2; interactions++) {
+					if (!LOR) {
+						let result = this.downOrTop(from, axisesFrom, axisesTo, awy, count > 0, start, lockedUps);
+						count += result;
+						if (result > 0) {
+							LOR = true;
+							from = awy[awy.length - 1];
+							axisesFrom = this.getAxisesByIndex(from);
+						}
+					}
+					if (!DOT) {
+						let result = this.leftOrRigth(from, axisesFrom, axisesTo, awy, count > 0, start, lockedUps);
+						count += result;
+						if (result > 0) {
+							DOT = true;
+							from = awy[awy.length - 1];
+							axisesFrom = this.getAxisesByIndex(from);
+						}
+					}
+					if (!count || interactions == 2) {
 						return false;
 					}
-				} else if (
-					axisesFrom.x == axisesTo.x
-					&& axisesFrom.y != axisesTo.y
-					&& !checkTarget(from, from + stepY, { start, lockedUps } as any)
-				) {
-					let count = 0;
-					count += leftOrRigth(false);
-					count += downOrTop(true);
-					if (count < 2) {
-						return false;
-					}
 				}
-
-				if (
-					axisesFrom.y != axisesTo.y
-					&& axisesFrom.x != axisesTo.x
-					&& !checkTarget(from, from + stepY, { lockedUps, start } as any)
-					&& !checkTarget(from, from + stepX, { lockedUps, start } as any)
-				) {
-
-					for (let count = 0, interactions = 0, LOR, DOT; count < 2; interactions++) {
-						if (!LOR) {
-							count += LOR = downOrTop(count);
-						}
-						if (!DOT) {
-							count += DOT = leftOrRigth(count);
-						}
-						if (!count || interactions == 2) {
-							return false;
-						}
-					}
-				}
-			}
-
-			for (let i = 2; i < awy.length;) {
-				if (awy[i] == awy[i - 2]) {
-					awy.splice(i - 2, 2);
-					i = Math.max(2, --i);
-				} else {
-					i++;
-				}
-			}
-
-			return awy;
-
-			function downOrTop(checkDirection) {
-
-				if (checkDirection) {
-
-					let direction = axisesFrom.y > axisesTo.y ? 0 : 1,
-						target = from + this.OFFSET[direction];
-
-					if (checkTarget(from, target, { start, lockedUps, axis: "y" } as any)) {
-						awy.push(from = target);
-						axisesFrom = this.getAxisesByIndex(from);
-						return 1;
-					}
-
-					return 0;
-				}
-
-				if (checkTarget(from, from + this.OFFSET[1], { start, lockedUps, axis: "y" } as any)) {
-					awy.push(from += this.OFFSET[1]);
-					axisesFrom = this.getAxisesByIndex(from);
-					return 1;
-				}
-
-				if (checkTarget(from, from + this.OFFSET[0], { start, lockedUps, axis: "y" } as any)) {
-					awy.push(from += this.OFFSET[0]);
-					axisesFrom = this.getAxisesByIndex(from);
-					return 1;
-				}
-
-				return 0;
-			}
-
-			function leftOrRigth(checkDirection) {
-
-				if (checkDirection) {
-
-					let direction = axisesFrom.x > axisesTo.x ? 2 : 3;
-
-					if (checkTarget(from, from + this.OFFSET[direction], { start, lockedUps, axis: "x" } as any)) {
-						awy.push(from += this.OFFSET[direction]);
-						axisesFrom = this.getAxisesByIndex(from);
-						return 1;
-					}
-
-					return 0;
-				}
-
-				if (checkTarget(from, from + this.OFFSET[3], { start, lockedUps, axis: "x" } as any)) {
-					awy.push(from += this.OFFSET[3]);
-					axisesFrom = this.getAxisesByIndex(from);
-					return 1;
-				}
-
-				if (checkTarget(from, from + this.OFFSET[2], { start, lockedUps, axis: "x" } as any)) {
-					awy.push(from += this.OFFSET[2]);
-					axisesFrom = this.getAxisesByIndex(from);
-					return 1;
-				}
-
-				return 0;
-
-			}
-
-			function checkTarget(from, to, { start, axis }) {
-
-				let axisesFrom = this.getAxisesByIndex(from),
-					stepAxis = (to - from) / Math.abs(to - from);
-
-				return !lockedUps.includes(to)
-					&& (!Number.isFinite(start) || to >= start)
-					&& (!axis ||
-						(
-							axisesFrom[axis] + stepAxis >= 0
-							&& axisesFrom[axis] + stepAxis < this.N
-						)
-					)
 			}
 		}
 
-		function going0(awy) {
-			for (let i = 1; i < awy.length; i++) {
-				this.replaseByindex(awy[i]);
+		for (let i = 2; i < awy.length;) {
+			if (awy[i] == awy[i - 2]) {
+				awy.splice(i - 2, 2);
+				i = Math.max(2, --i);
+			} else {
+				i++;
 			}
 		}
 
-		function GoFromBelow(target) {
+		return awy;
+	}
 
-			GoFromBelowNow = false;
+	private downOrTop = (from, axisesFrom, axisesTo, awy, checkDirection, start, lockedUps) => {
+		if (checkDirection) {
+			let direction = axisesFrom.y > axisesTo.y ? 0 : 1,
+				target = from + this.OFFSET[direction];
 
-			let awy0 = findAwy0(target + this.N - 2, [target + this.N - 1]);
-
-			if (awy0) going0(awy0);
-			else return lastLines(target);
-
-			for (let i of [0, 3, 1, 3, 0, 2, 2, 1]) {
-				this.repalseByDirection(i);
+			if (this.checkTarget(from, target, { start, lockedUps, axis: "y" })) {
+				awy.push(target);
+				return 1;
 			}
 
-			return true;
+			return 0;
 		}
 
-		function lastLines(index, beforeGarbeg?) {
+		if (this.checkTarget(from, from + this.OFFSET[1], { start, lockedUps, axis: "y" })) {
+			awy.push(from + this.OFFSET[1]);
+			return 1;
+		}
 
-			GoFromBelowNow = false;
+		if (this.checkTarget(from, from + this.OFFSET[0], { start, lockedUps, axis: "y" })) {
+			awy.push(from + this.OFFSET[0]);
+			return 1;
+		}
 
-			let profite, to, garbage, stop, direction,
-				startLastLines = this.N * (this.N - 2),
-				line = this.getAxisesByIndex(index).y,
-				from = new getInfoByValue(index + 1, startLastLines),
-				count = 1,
-				before = beforeGarbeg || new getInfoByValue(getLinkedInBall(index, -1).index + 1, startLastLines),
-				next = { index: null };
+		return 0;
+	}
 
+	private leftOrRigth = (from, axisesFrom, axisesTo, awy, checkDirection, start, lockedUps) => {
+		if (checkDirection) {
+			let direction = axisesFrom.x > axisesTo.x ? 2 : 3;
 
-			while ((next = getLinkedInBall(next.index || from.index, 1)).index != before.index) {
-				if ((next as any).value) {
-					count++;
-				}
+			if (this.checkTarget(from, from + this.OFFSET[direction], { start, lockedUps, axis: "x" })) {
+				awy.push(from + this.OFFSET[direction]);
+				return 1;
 			}
-			profite = count % 2 + 1;
-			if (profite == 2) {
-				do {
-					before = getLinkedInBall(before.index, 1);
-				} while (!before.value);
+
+			return 0;
+		}
+
+		if (this.checkTarget(from, from + this.OFFSET[3], { start, lockedUps, axis: "x" })) {
+			awy.push(from + this.OFFSET[3]);
+			return 1;
+		}
+
+		if (this.checkTarget(from, from + this.OFFSET[2], { start, lockedUps, axis: "x" })) {
+			awy.push(from + this.OFFSET[2]);
+			return 1;
+		}
+
+		return 0;
+	}
+
+	private checkTarget = (from, to, options: { start?: number; axis?: string; lockedUps: any[] }) => {
+		let axisesFrom = this.getAxisesByIndex(from),
+			stepAxis = (to - from) / Math.abs(to - from);
+
+		return !options.lockedUps.includes(to) &&
+			(!Number.isFinite(options.start) || to >= options.start) &&
+			(!options.axis || (axisesFrom[options.axis] + stepAxis >= 0 && axisesFrom[options.axis] + stepAxis < this.N));
+	}
+
+	private going0 = (awy) => {
+		for (let i = 1; i < awy.length; i++) {
+			this.replaseByindex(awy[i]);
+		}
+	}
+
+	private GoFromBelow = (target) => {
+		this.GoFromBelowNow = false;
+
+		let awy0 = this.findAwy0(target + this.N - 2, [target + this.N - 1]);
+
+		if (awy0) this.going0(awy0);
+		else return this.lastLines(target);
+
+		for (let i of [0, 3, 1, 3, 0, 2, 2, 1]) {
+			this.repalseByDirection(i);
+		}
+
+		return true;
+	}
+
+	private lastLines = (index, beforeGarbeg?) => {
+		this.GoFromBelowNow = false;
+
+		let profite, to, garbage, stop, direction,
+			startLastLines = this.N * (this.N - 2),
+			line = this.getAxisesByIndex(index).y,
+			from = new this.getInfoByValue(index + 1, startLastLines),
+			count = 1,
+			before = beforeGarbeg || new this.getInfoByValue(this.getLinkedInBall(index, -1).index + 1, startLastLines),
+			next: { index: number; value?: number } = { index: null };
+
+
+		while ((next = this.getLinkedInBall(next.index || from.index, 1)).index != before.index) {
+			if (next.value) {
 				count++;
 			}
-			to = getLinkedInBall(before.index, 1);
+		}
+		profite = count % 2 + 1;
+		if (profite == 2) {
+			do {
+				before = this.getLinkedInBall(before.index, 1);
+			} while (!before.value);
+			count++;
+		}
+		to = this.getLinkedInBall(before.index, 1);
 
-			if (
-				(
-					to.y >= line
-					|| to.x == this.N - 1
-					|| !getLinkedInBall(to.index, -1).value
-				)
-				&& (
-					to.value != from.value
-					|| to.y != line
-				)
-			) {
+		if ((to.y >= line || to.x == this.N - 1 || !this.getLinkedInBall(to.index, -1).value) &&
+			(to.value != from.value || to.y != line)) {
 
-				direction = setDirection();
+			direction = this.setDirection(line, startLastLines, before, count);
 
-				while (!(to.x == from.x && !to.value)) {
-					this.replaseByindex(getLinkedInBall(this.INDEX0, direction).index);
-					from = new getInfoByValue(from.value, startLastLines);
-					before = new getInfoByValue(before.value, startLastLines);
-					to = getLinkedInBall(before.index, 1);
-				}
+			while (!(to.x == from.x && !to.value)) {
+				this.replaseByindex(this.getLinkedInBall(this.INDEX0, direction).index);
+				from = new this.getInfoByValue(from.value, startLastLines);
+				before = new this.getInfoByValue(before.value, startLastLines);
+				to = this.getLinkedInBall(before.index, 1);
+			}
 
-				this.replaseByindex(from.index);
+			this.replaseByindex(from.index);
 
-				l: while (true) {
+			let continueLoop = true;
+			while (continueLoop) {
+				if (profite == 2 && line == this.N - 2) {
+					garbage = new this.getInfoByValue(before.value, startLastLines);
 
-					if (profite == 2 && line == this.N - 2) {
+					if (this.getAxisesByIndex(index).x == this.N - 1 && to.x == this.N - 1) {
+						let lockedUps = [];
+						for (let i = startLastLines; i <= index; i++) {
+							lockedUps.push(this.getIndexByValue(i + 1, startLastLines))
+						}
+						let awy0 = this.findAwy0(garbage.index, lockedUps, startLastLines)
 
-						garbage = new getInfoByValue(before.value, startLastLines);
-
-						if (this.getAxisesByIndex(index).x == this.N - 1 && to.x == this.N - 1) {
-							let lockedUps = [];
-							for (let i = startLastLines; i <= index; i++) {
-								lockedUps.push(this.getIndexByValue(i + 1, startLastLines))
-							}
-							let awy0 = findAwy0(garbage.index, lockedUps, startLastLines)
-
-							if (awy0) {
-								going0(awy0);
-								profite--;
-							}
-
-						} else if (garbage.value && garbage.x == this.getAxisesByIndex(this.INDEX0).x) {
-							this.replaseByindex(garbage.index);
-							let beforeGarbage = getLinkedInBall(this.INDEX0, -1);
-							direction = beforeGarbage.index + 1 == beforeGarbage.value ? -1 : direction;
+						if (awy0) {
+							this.going0(awy0);
 							profite--;
 						}
+					} else if (garbage.value && garbage.x == this.getAxisesByIndex(this.INDEX0).x) {
+						this.replaseByindex(garbage.index);
+						let beforeGarbage = this.getLinkedInBall(this.INDEX0, -1);
+						direction = beforeGarbage.index + 1 == beforeGarbage.value ? -1 : direction;
+						profite--;
 					}
+				}
 
-					this.replaseByindex(getLinkedInBall(this.INDEX0, -direction).index);
+				this.replaseByindex(this.getLinkedInBall(this.INDEX0, -direction).index);
 
-					stop = beforeGarbeg ?
-						beforeGarbeg.value - 1
-						: line == this.N - 2 || profite == 1 ?
-							index
-							: new getInfoByValue(getLinkedInBall(index, -1).index + 1, startLastLines).index;
+				stop = beforeGarbeg ?
+					beforeGarbeg.value - 1 :
+					line == this.N - 2 || profite == 1 ?
+						index :
+						new this.getInfoByValue(this.getLinkedInBall(index, -1).index + 1, startLastLines).index;
 
-					for (let i = startLastLines; i <= stop;) {
-						if (this.getValueByIndex(i) != ++i) {
-							continue l;
-						}
+				continueLoop = false;
+				for (let i = startLastLines; i <= stop;) {
+					if (this.getValueByIndex(i) != ++i) {
+						continueLoop = true;
+						break;
 					}
-					break;
 				}
 			}
-
-			if (!beforeGarbeg) {
-
-				if (
-					index == this.LENGTH - 3
-					&& new getInfoByValue(this.LENGTH - 2, startLastLines).index > new getInfoByValue(this.LENGTH - 1, startLastLines).index
-				) {
-					return false;
-				}
-
-				if (line == this.N - 1 && index < this.LENGTH - 2 && profite == 2) {
-					before = new getInfoByValue(before.value, startLastLines);
-					return lastLines(before.value - 1, getLinkedInBall(before.index, 1));
-				}
-			}
-
-			return true;
-
-			function getLinkedInBall(index, some) {
-
-				let axises, step, absSome;
-
-				while (some) {
-
-					absSome = Math.abs(some)
-					axises = this.getAxisesByIndex(index);
-					step = (axises.y == line ? 1 : -1) * (some / absSome);
-					index += axises.x + step < this.N && axises.x + step >= 0 ? step : this.N * (axises.y == this.N - 2 ? 1 : -1);
-
-					some -= some > 0 ? 1 : -1;
-				}
-
-				return new getInfoByIndex(index);
-			}
-
-			function setDirection() {
-				let offtet = count / 2 - 1,
-					options1 = (line == this.N - 2 ? startLastLines : startLastLines + this.N) + offtet,
-					option2 = (line == this.N - 2 ? this.LENGTH - 1 : this.LENGTH - 1 - this.N) - offtet,
-					countSteps = 0,
-					nextStep = before.index;
-
-				while (nextStep != options1 && nextStep != option2) {
-					countSteps++;
-					nextStep = getLinkedInBall(nextStep, 1).index;
-				}
-
-				return countSteps < this.N / 2 ? -1 : 1;
-
-			}
-
 		}
 
-		function getInfoByValue(value, startSearch) {
+		if (!beforeGarbeg) {
+			if (index == this.LENGTH - 3 &&
+				new this.getInfoByValue(this.LENGTH - 2, startLastLines).index >
+				new this.getInfoByValue(this.LENGTH - 1, startLastLines).index) {
+				return false;
+			}
 
-			this.value = value;
-			this.index = this.getIndexByValue(value, startSearch);
-
-			let axises = this.getAxisesByIndex(this.index);
-
-			this.x = axises.x;
-			this.y = axises.y;
+			if (line == this.N - 1 && index < this.LENGTH - 2 && profite == 2) {
+				before = new this.getInfoByValue(before.value, startLastLines);
+				return this.lastLines(before.value - 1, this.getLinkedInBall(before.index, 1));
+			}
 		}
 
-		function getInfoByIndex(index) {
+		return true;
+	}
 
+	private getLinkedInBall = (index, some) => {
+		while (some) {
 			let axises = this.getAxisesByIndex(index);
+			let line = this.getAxisesByIndex(this.currentIndex).y;
+			let absSome = Math.abs(some);
+			let step = (axises.y == line ? 1 : -1) * (some / absSome);
+			index += axises.x + step < this.N && axises.x + step >= 0 ? step : this.N * (axises.y == this.N - 2 ? 1 : -1);
 
-			this.value = this.getValueByIndex(index);
-			this.index = index;
-			this.x = axises.x;
-			this.y = axises.y;
+			some -= some > 0 ? 1 : -1;
 		}
+
+		return new this.getInfoByIndex(index);
+	}
+
+	private setDirection = (line, startLastLines, before, count) => {
+		let offtet = count / 2 - 1,
+			options1 = (line == this.N - 2 ? startLastLines : startLastLines + this.N) + offtet,
+			option2 = (line == this.N - 2 ? this.LENGTH - 1 : this.LENGTH - 1 - this.N) - offtet,
+			countSteps = 0,
+			nextStep = before.index;
+
+		while (nextStep != options1 && nextStep != option2) {
+			countSteps++;
+			nextStep = this.getLinkedInBall(nextStep, 1).index;
+		}
+
+		return countSteps < this.N / 2 ? -1 : 1;
+	}
+
+	private getInfoByValue = function (value, startSearch) {
+		this.value = value;
+		this.index = this.getIndexByValue(value, startSearch);
+
+		let axises = this.getAxisesByIndex(this.index);
+		this.x = axises.x;
+		this.y = axises.y;
+	}
+
+	private getInfoByIndex = function (index) {
+		let axises = this.getAxisesByIndex(index);
+
+		this.value = this.getValueByIndex(index);
+		this.index = index;
+		this.x = axises.x;
+		this.y = axises.y;
 	}
 
 	private repalseByDirection(direction: number) {
@@ -503,7 +463,6 @@ export class ResolverService {
 	}
 
 	private replaseByindex(index: number, notLog?: boolean) {
-
 		let value = this.getValueByIndex(index);
 
 		this.setValueByIndex(this.INDEX0, value);
@@ -513,7 +472,6 @@ export class ResolverService {
 		this.INDEX0 = index;
 
 		if (!notLog) {
-
 			let hash0 = this.getHashByValue(0),
 				hashValue = this.getHashByValue(value);
 
@@ -523,40 +481,42 @@ export class ResolverService {
 			this.COUNT_STEP++;
 
 			if (this.ALL_HASH[this.HASH] >= 0) {
-				new indexesForDelete(this.ALL_HASH[this.HASH], this.COUNT_STEP);
+				this.createIndexesForDelete(this.ALL_HASH[this.HASH], this.COUNT_STEP);
 			} else {
 				this.ALL_HASH[this.HASH] = this.COUNT_STEP;
 			}
 		}
+	}
 
-		function indexesForDelete(start, end) {
+	private createIndexesForDelete(start, end) {
+		const indexesForDelete = {
+			start,
+			end,
+			count: end - start,
 
-			this.start = start;
-			this.end = end;
-			this.count = end - start;
+			checkIndex: (i) => {
+				return i < indexesForDelete.start - 1 || i > indexesForDelete.end - 2;
+			},
 
-			if (this.INDEXES_FOR_DELETE_LIST.every(ifd => ifd.checkOther(this))) {
-				this.INDEXES_FOR_DELETE_LIST.push(this);
-			}
-
-			this.checkIndex = (i) => {
-				return i < this.start - 1 || i > this.end - 2;
-			};
-
-			this.checkOther = (other) => {
-				if (other.start <= this.end && other.count > this.count) {
-					this.start = other.start;
-					this.end = other.end;
-					this.count = this.end - this.start;
+			checkOther: (other) => {
+				if (other.start <= indexesForDelete.end && other.count > indexesForDelete.count) {
+					indexesForDelete.start = other.start;
+					indexesForDelete.end = other.end;
+					indexesForDelete.count = indexesForDelete.end - indexesForDelete.start;
 					return false;
 				}
+				return true;
 			}
+		};
+
+		if (this.INDEXES_FOR_DELETE_LIST.every(ifd => ifd.checkOther(indexesForDelete))) {
+			this.INDEXES_FOR_DELETE_LIST.push(indexesForDelete);
 		}
 
+		return indexesForDelete;
 	}
 
 	private getOptions() {
-
 		let indexex0 = this.getAxisesByIndex(this.INDEX0);
 		let indexesI;
 
@@ -598,18 +558,11 @@ export class ResolverService {
 	}
 
 	private getIndexByValue(value: number, start: number) {
-		for (let i = start; i < this.LENGTH; i++) {
+		for (let i = start || 0; i < this.LENGTH; i++) {
 			if (this.getValueByIndex(i) == value) {
 				return i;
 			}
 		}
-	}
-
-	constructor() { }
-
-
-	getSolution(arr: number[][]): Observable<number[]> {
-		const newArr = JSON.parse(JSON.stringify(arr))
-		return of(JSON.parse(JSON.stringify(this.solution(newArr))));
+		return -1;
 	}
 }
